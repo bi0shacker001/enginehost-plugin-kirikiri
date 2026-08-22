@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:label="enginehost: KiriKiri"
+        android:allowBackup="false">
+
+        <!--
+             The real enginehost plugin contract: meta-data identifying
+             this plugin, and an exported activity handling
+             dev.enginehost.plugin.RUN. See enginehost's own README for
+             the full contract, and RunActivity's own doc comment for
+             this plugin's current real status.
+        -->
+        <meta-data android:name="dev.enginehost.plugin.engine" android:value="kirikiri2" />
+        <meta-data android:name="dev.enginehost.plugin.engineVersion" android:value="2.32" />
+        <meta-data android:name="dev.enginehost.plugin.pluginVersion" android:value="0.1.0" />
+
+        <activity
+            android:name=".RunActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="dev.enginehost.plugin.RUN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
