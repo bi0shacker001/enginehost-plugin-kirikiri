@@ -2,15 +2,31 @@ name: KiriKiri engine build (vendor/kirikiroid2)
 
 # Real, separate build from build.yml -- vendor/kirikiroid2/project/android
 # is its own complete, self-contained Gradle project (own settings.gradle,
-# own root build.gradle, a real :cocos2dx module pointing at the vendored
-# cocos2d-x source tree), NOT something that gets linked into this repo's
-# own :app module. It's the actual real enginehost plugin now (see its own
-# AndroidManifest.xml -- MainActivity declares dev.enginehost.plugin.RUN
-# directly), so this repo needs to build IT, not a separate Kotlin wrapper.
+# own root build.gradle, a real :cocos2dx module), NOT something that gets
+# linked into this repo's own :app module. It's the actual real enginehost
+# plugin now (see its own AndroidManifest.xml -- MainActivity declares
+# dev.enginehost.plugin.RUN directly), so this repo needs to build IT, not
+# a separate Kotlin wrapper.
+#
+# manual trigger ONLY, deliberately -- confirmed via a real failed run
+# (2fdfecc) that :cocos2dx's own real target
+# (thirdparty/port/cocos2d-x/cocos/platform/android/libcocos2dx,
+# .gitignore'd, never vendored) doesn't exist yet. Per this project's own
+# readme.md ("(1) prepare" section), that whole thirdparty/port/ tree is
+# populated by real, separate build scripts (_fetch.sh, then
+# _androida64.sh/script/cross_android64.sh) that download and
+# cross-compile roughly a dozen real third-party C/C++ projects first --
+# libvorbis, opus, libogg, opusfile, SDL2, oniguruma, breakpad, a FFmpeg
+# fork, oboe, openal-soft, libjpeg-turbo, opencv 4.7.0, lz4, libarchive,
+# and cocos2d-x 3.17.2 itself (real URLs listed in readme.md's own
+# "prepare" section). That's a genuinely large, multi-hour native build
+# pipeline with real external downloads this session didn't have
+# clearance to run unsupervised -- automatic push/PR triggers would just
+# fail this workflow on every future commit until that pipeline is set
+# up for real. Re-enable push/pull_request triggers only once _fetch.sh +
+# _androida64.sh have actually been run (or their real output vendored)
+# somewhere this workflow's checkout can see.
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:
