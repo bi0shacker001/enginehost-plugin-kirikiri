@@ -1,0 +1,69 @@
+name: KiriKiri engine build (vendor/kirikiroid2)
+
+# Real, separate build from build.yml -- vendor/kirikiroid2/project/android
+# is its own complete, self-contained Gradle project (own settings.gradle,
+# own root build.gradle, a real :cocos2dx module pointing at the vendored
+# cocos2d-x source tree), NOT something that gets linked into this repo's
+# own :app module. It's the actual real enginehost plugin now (see its own
+# AndroidManifest.xml -- MainActivity declares dev.enginehost.plugin.RUN
+# directly), so this repo needs to build IT, not a separate Kotlin wrapper.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: vendor/kirikiroid2/project/android
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Real, pinned version this project's own build.gradle asks for
+      # (externalNativeBuild.cmake.arguments) -- the runner's default NDK
+      # is a different version, not necessarily ABI/API-compatible with
+      # this project's own C++ (real Box64/box86-era native code, no
+      # guarantee it builds clean against a newer NDK's stricter clang).
+      - name: Install pinned NDK
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653" "platforms;android-29"
+
+      # Real, unavoidable requirement: app/build.gradle's own debug
+      # buildType sets signingConfig signingConfigs.release
+      # unconditionally (not just for release) -- a debug build still
+      # needs *some* real keystore to sign with. This is a fresh,
+      # disposable CI-only debug key (Android's own standard debug
+      # keystore credentials), not droidtop's own real production
+      # signing identity -- completely separate concern, this vendored
+      # third-party engine doesn't share droidtop's own signing setup at
+      # all.
+      - name: Generate a disposable debug keystore
+        run: |
+          keytool -genkeypair -v -keystore app/sign.jks -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Build debug APK
+        env:
+          SIGN_KEY_ALIAS: androiddebugkey
+          SIGN_KEY_PASS: android
+          SIGN_STORE_PASS: android
+        run: ./gradlew :krkr2yuri:assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kirikiroid2-engine-debug-apk
+          path: vendor/kirikiroid2/project/android/app/build/outputs/apk/debug/*.apk
