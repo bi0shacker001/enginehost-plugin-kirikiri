@@ -51,6 +51,12 @@ jobs:
       # all.
       - name: Generate a disposable debug keystore
         run: |
+          # A real, pre-existing app/sign.jks is already checked into this
+          # vendor tree (someone's own placeholder, unknown real
+          # password) -- keytool refuses to overwrite an existing
+          # keystore file it can't first load, so it has to go before
+          # generating a fresh one.
+          rm -f app/sign.jks
           keytool -genkeypair -v -keystore app/sign.jks -storepass android -alias androiddebugkey \
             -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
