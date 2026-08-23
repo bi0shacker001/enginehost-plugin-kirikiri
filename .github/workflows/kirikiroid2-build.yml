@@ -66,7 +66,7 @@ jobs:
           SIGN_KEY_ALIAS: androiddebugkey
           SIGN_KEY_PASS: android
           SIGN_STORE_PASS: android
-        run: ./gradlew :krkr2yuri:assembleDebug --stacktrace
+        run: chmod +x gradlew && ./gradlew :krkr2yuri:assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
