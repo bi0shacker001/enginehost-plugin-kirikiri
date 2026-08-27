@@ -8,24 +8,11 @@ name: KiriKiri engine build (vendor/kirikiroid2)
 # dev.enginehost.plugin.RUN directly), so this repo needs to build IT, not
 # a separate Kotlin wrapper.
 #
-# manual trigger ONLY, deliberately -- confirmed via a real failed run
-# (2fdfecc) that :cocos2dx's own real target
-# (thirdparty/port/cocos2d-x/cocos/platform/android/libcocos2dx,
-# .gitignore'd, never vendored) doesn't exist yet. Per this project's own
-# readme.md ("(1) prepare" section), that whole thirdparty/port/ tree is
-# populated by real, separate build scripts (_fetch.sh, then
-# _androida64.sh/script/cross_android64.sh) that download and
-# cross-compile roughly a dozen real third-party C/C++ projects first --
-# libvorbis, opus, libogg, opusfile, SDL2, oniguruma, breakpad, a FFmpeg
-# fork, oboe, openal-soft, libjpeg-turbo, opencv 4.7.0, lz4, libarchive,
-# and cocos2d-x 3.17.2 itself (real URLs listed in readme.md's own
-# "prepare" section). That's a genuinely large, multi-hour native build
-# pipeline with real external downloads this session didn't have
-# clearance to run unsupervised -- automatic push/PR triggers would just
-# fail this workflow on every future commit until that pipeline is set
-# up for real. Re-enable push/pull_request triggers only once _fetch.sh +
-# _androida64.sh have actually been run (or their real output vendored)
-# somewhere this workflow's checkout can see.
+# Manual trigger only: the native build inputs are about 1 GB and are
+# intentionally fetched only when someone asks CI to build the engine.
+# These are the prebuilt port/build archives published by upstream and
+# consumed by upstream's own Android workflow; using them avoids the
+# multi-hour _fetch.sh + _androida64.sh cross-compilation pipeline.
 on:
   workflow_dispatch:
 
@@ -47,6 +34,29 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+
+      - name: Restore upstream native dependencies
+        working-directory: vendor/kirikiroid2
+        run: |
+          curl --fail --location --retry 3 --remote-name \
+            https://github.com/YuriSizuku/Kirikiroid2Yuri/releases/download/deps/thirdparty_build.tar.gz
+          curl --fail --location --retry 3 --remote-name \
+            https://github.com/YuriSizuku/Kirikiroid2Yuri/releases/download/deps/thirdparty_port.tar.gz
+          tar --extract --gzip --file thirdparty_build.tar.gz
+          tar --extract --gzip --file thirdparty_port.tar.gz
+          test -d thirdparty/build
+          test -d thirdparty/port/cocos2d-x/cocos/platform/android/libcocos2dx
+
+      # The source repository intentionally does not contain the runtime
+      # assets. Upstream's own Android workflow seeds them from its last
+      # known-working APK before compiling the current source tree.
+      - name: Restore upstream runtime assets
+        working-directory: vendor/kirikiroid2
+        run: |
+          curl --fail --location --retry 3 --output upstream.apk \
+            https://github.com/YuriSizuku/Kirikiroid2Yuri/releases/download/1.3.9_yuri/Kirikiroid2_yuri_1.3.9.apk
+          unzip -q upstream.apk 'assets/*'
+          test -d assets
 
       # Real, pinned version this project's own build.gradle asks for
       # (externalNativeBuild.cmake.arguments) -- the runner's default NDK
