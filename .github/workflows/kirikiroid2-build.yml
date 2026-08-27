@@ -24,13 +24,13 @@ jobs:
         working-directory: vendor/kirikiroid2/project/android
     steps:
       - name: Checkout (with submodules)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
           fetch-depth: 1
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -95,7 +95,8 @@ jobs:
         run: chmod +x gradlew && ./gradlew :krkr2yuri:assembleDebug --stacktrace
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: kirikiroid2-engine-debug-apk
-          path: vendor/kirikiroid2/project/android/app/build/outputs/apk/debug/*.apk
+          path: vendor/kirikiroid2/build_android/outputs/apk/debug/*.apk
+          if-no-files-found: error
